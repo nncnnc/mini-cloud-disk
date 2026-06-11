@@ -92,6 +92,12 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
@@ -106,7 +112,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>org.nnc.clouddisk.CloudDiskApplication</mainClass>
-                    <skip>false</skip>
                 </configuration>
                 <executions>
                     <execution>
