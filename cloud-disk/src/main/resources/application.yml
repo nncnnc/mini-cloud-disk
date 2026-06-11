@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name:mini-cloud-disk
+
+  # 1. 数据库连接配置
+  datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/mini_disk?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
+      username: root
+      password: 1234
+  # 2. 文件上传限制配置（网盘项目必须配置，否则大文件会上传失败）
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB     # 单个文件最大限制
+      max-request-size: 100MB  # 单次请求最大限制
+
+# 3. MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开发环境下在控制台打印 SQL 语句
+    map-underscore-to-camel-case: true # 开启驼峰命名转换（数据库 file_name -> 实体类 fileName）
+  mapper-locations: classpath*:/mapper/**/*.xml
+  global-config:
+    db-config:
+      logic-delete-field: deleted # 如果你打算做回收站（逻辑删除），可以配置这个
+
+# 4. 自定义 MinIO 配置（这些值会被注入到你的 MinioConfig 实体类中）
+minio:
+  endpoint: http://127.0.0.1:9005
+  accessKey: admin123       # 替换为你的 MinIO Access Key
+  secretKey: 12345678      # 替换为你的 MinIO Secret Key
+  bucketName: mini-cloud-disk      # 存储文件的桶名称
+
+# JWT 配置
+jwt:
+  secret: your_real_super_secret_key_change_me_in_production # 替换为你自己的长乱码密钥
+  expire-time: 604800000 # 7天的毫秒数 (7 * 24 * 60 * 60 * 1000)
+
+
+
+# Redis 配置
+data:
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    # password: your_password # 如果你的本地 Redis 设置了密码就填上，没有就不填
+    database: 0 # 使用0号数据库

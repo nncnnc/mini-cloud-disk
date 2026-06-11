@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # 1. MySQL 数据库服务
+  mysql:
+    image: mysql:8.0 # 如果你需要 5.7 版本，把这里改成 mysql:5.7
+    container_name: mini-cloud-disk-mysql
+    restart: always
+    ports:
+      - "3306:3306" # 映射到物理机方便你用 Navicat 连接查看
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234 # 匹配你 yml 里的密码
+      MYSQL_DATABASE: mini_disk # 容器启动时会自动为你创建这个数据库！
+    volumes:
+      - ./mysql-data:/var/lib/mysql # 数据持久化，防止重启丢失数据
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # 2. Redis 缓存服务
+  redis:
+    image: redis:7.0-alpine
+    container_name: mini-cloud-disk-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data # 数据持久化
+    command: redis-server --appendonly yes # 开启 AOF 持久化
+
+  # 3. MinIO 对象存储服务
+  minio:
+    image: minio/minio
+    container_name: mini-cloud-disk-minio
+    restart: always
+    ports:
+      - "9005:9005" # API 端口 (你的项目代码调用的端口)
+      - "9001:9001" # Web 控制台界面端口
+    environment:
+      MINIO_ROOT_USER: admin123  # 匹配你 yml 里的 accessKey
+      MINIO_ROOT_PASSWORD: 12345678 # 匹配你 yml 里的 secretKey
+    volumes:
+      - ./minio-data:/data # 文件持久化存储路径
+    # 设置 API 端口为 9005，控制台端口为 9001
+    command: server /data --address ":9005" --console-address ":9001"
+
+  # 4. Spring Boot 后端服务
+  backend:
+    build:
+      context: ./cloud-disk
+    container_name: mini-cloud-disk-backend
+    restart: always
+    expose:
+      - "8080"
+    depends_on:
+      - mysql
+      - redis
+      - minio
+    environment:
+      # 【重点修改】把原来的 localhost 或 host.docker.internal 改成了容器的服务名！
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/mini_disk?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
+      - SPRING_DATA_REDIS_HOST=redis
+      - MINIO_ENDPOINT=http://minio:9005
+
+  # 5. Vue 前端服务
+  frontend:
+    build:
+      context: ./cloud-disk-ui
+    container_name: mini-cloud-disk-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
