@@ -1,4 +1,5 @@
-FROM node:16 AS builder
+# 把 node:16 改成了 node:22
+FROM node:22 AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
